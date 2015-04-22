@@ -6,6 +6,8 @@ package com.example.michael.contentmanager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 public class DataServerReceiver extends BroadcastReceiver {
@@ -18,6 +20,10 @@ public class DataServerReceiver extends BroadcastReceiver {
         int duration = Toast.LENGTH_SHORT;
         Toast toast = Toast.makeText(context, text, duration);
         toast.show();
+        Bundle results = getResultExtras(true);
+        String s = results.getString("broadCastResp");
+        System.out.println("CM DS Rx Final Result Receiver = " + s);
+        System.out.println(results);
     }
 
 }
