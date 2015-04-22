@@ -10,6 +10,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 public class DataServerReceiver extends BroadcastReceiver {
 
     @Override
@@ -23,6 +26,15 @@ public class DataServerReceiver extends BroadcastReceiver {
         Bundle results = getResultExtras(true);
         String s = results.getString("broadCastResp");
         System.out.println("CM DS Rx Final Result Receiver = " + s);
+        ArrayList<String> serviceIds = results.getStringArrayList("dsServices");
+        if(serviceIds != null) {
+            for (int i = 0; i < serviceIds.size(); ++i) {
+                String id = serviceIds.get(i);
+                HashMap<String,Object> serviceOptions = (HashMap<String,Object>) results.getSerializable(id);
+                System.out.print(id + ": ");
+                System.out.println(serviceOptions);
+            }
+        }
         System.out.println(results);
     }
 
