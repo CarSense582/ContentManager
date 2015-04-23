@@ -54,7 +54,13 @@ public class MainActivity extends ActionBarActivity {
                 DataServiceInformation s = services.get(position);
                 Toast toast=Toast.makeText(getApplicationContext(), s.serviceId, Toast.LENGTH_SHORT);
                 toast.show();
-
+                Intent intent = new Intent(view.getContext(), ServiceActivity.class);
+                intent.putExtra("msg","bye");
+                Bundle b = new Bundle();
+                b.putSerializable("service_map", s.fieldInfo);
+                b.putString("service_id", s.serviceId);
+                intent.putExtras(b);
+                startActivity(intent);
             }
         });
         final Button button = (Button) findViewById(R.id.refreshButton);

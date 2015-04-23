@@ -6,5 +6,9 @@
     <string name="action_settings">Settings</string>
     <string name="ping_service">Ping</string>
     <string name="refresh">Refresh</string>
+    <string name="title_activity_service">ServiceActivity</string>
+    <string name="setButton">Set</string>
+    <string name="getButton">Get</string>
+
 
 </resources>
