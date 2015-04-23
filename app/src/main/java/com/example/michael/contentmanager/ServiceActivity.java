@@ -24,6 +24,8 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.example.michael.dataserverlib.DataServerLibConstants;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,8 +42,8 @@ public class ServiceActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_service);
         Intent intent = getIntent();
-        DataServiceInformation ds = new DataServiceInformation(intent.getStringExtra("service_id"),
-                (HashMap<String,Object>) intent.getSerializableExtra("service_map"));
+        DataServiceInformation ds = new DataServiceInformation(intent.getStringExtra(MainActivity.SERVICE_ID_KEY),
+                (HashMap<String,Object>) intent.getSerializableExtra(MainActivity.SERVICE_MAP_KEY));
         //Setup list
         lv = (ListView) findViewById(R.id.serviceFieldList);
         ArrayList<Pair<String, Object>> services = new ArrayList<Pair<String, Object>>();
@@ -61,7 +63,14 @@ public class ServiceActivity extends ActionBarActivity {
         final Button button = (Button) findViewById(R.id.getValue);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                sendMessage();
+                sendMessage(DataServerLibConstants.READ_MSG);
+            }
+        });
+        //Setup set button
+        final Button sButton = (Button) findViewById(R.id.setValue);
+        sButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                sendMessage(DataServerLibConstants.WRITE_MSG);
             }
         });
     }
@@ -160,29 +169,35 @@ public class ServiceActivity extends ActionBarActivity {
         }
     }
 
-    public void sendMessage() {
+    public void sendMessage(int what) {
         Message msg = Message
-                .obtain(null, 3);
-
-        msg.replyTo = new Messenger(new DataServerHandler() {
-            @Override
-            public void useMap() {
-                ArrayList<Pair<String,Object>> serviceFields = new ArrayList<Pair<String,Object>>();
-                Set<String> keys = map.keySet();
-                for(String k: keys) {
-                    serviceFields.add(new Pair<String, Object>(k, map.get(k)));
-                }
-                arrayAdapter.clear();
-                arrayAdapter.addAll(serviceFields);
-                arrayAdapter.notifyDataSetChanged();
-            }
-        });
-        // We pass the value
+                .obtain(null, what);
         Bundle b = new Bundle();
-        b.putString("data", "content manager data");
-
+        if(what == DataServerLibConstants.READ_MSG) {
+            msg.replyTo = new Messenger(new DataServerHandler() {
+                @Override
+                public void useMap() {
+                    ArrayList<Pair<String, Object>> serviceFields = new ArrayList<Pair<String, Object>>();
+                    Set<String> keys = map.keySet();
+                    for (String k : keys) {
+                        serviceFields.add(new Pair<String, Object>(k, map.get(k)));
+                    }
+                    arrayAdapter.clear();
+                    arrayAdapter.addAll(serviceFields);
+                    arrayAdapter.notifyDataSetChanged();
+                }
+            });
+            // We pass the value
+            b.putString("data", "content manager data");
+        } else { //Writing
+            HashMap<String, Object> map = new HashMap<String, Object>();
+            for(int i = 0; i < arrayAdapter.size(); ++i) {
+                Pair<String,Object> p = arrayAdapter.getItem(i);
+                map.put(p.first,p.second);
+            }
+            b.putSerializable(DataServerLibConstants.WRITE_MAP,map);
+        }
         msg.setData(b);
-
         try {
             if(mBound) {
                 mService.send(msg);

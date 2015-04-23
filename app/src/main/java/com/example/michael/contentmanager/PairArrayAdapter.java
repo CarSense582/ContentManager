@@ -20,6 +20,10 @@ public class PairArrayAdapter extends ArrayAdapter<Pair<String,Object>> {
     int layoutResourceId;
     ArrayList<Pair<String,Object>> data = null;
 
+    public int size() {
+        return data.size();
+    }
+
     public PairArrayAdapter(Context context, int layoutResourceId, ArrayList<Pair<String,Object>> data) {
         super(context, layoutResourceId, data);
         this.layoutResourceId = layoutResourceId;

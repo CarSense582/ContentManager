@@ -7,6 +7,8 @@ package com.example.michael.contentmanager;
 import android.os.Handler;
 import android.os.Message;
 
+import com.example.michael.dataserverlib.DataServerLibConstants;
+
 import java.util.HashMap;
 
 // This class handles the Service response
@@ -16,15 +18,12 @@ abstract class DataServerHandler extends Handler {
     @Override
     public void handleMessage(Message msg) {
         int respCode = msg.what;
-
         switch (respCode) {
             default: {
-                String val = msg.getData().getString("respData");
-                map = (HashMap<String,Object>) msg.getData().getSerializable("respMap");
+                map = (HashMap<String,Object>) msg.getData().getSerializable(DataServerLibConstants.READ_REPLY_MAP);
                 if(map != null) {
                     useMap();
                 }
-                System.out.println("CM got " + val + " from DS");
                 break;
             }
         }

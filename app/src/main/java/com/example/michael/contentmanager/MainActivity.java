@@ -25,6 +25,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.michael.dataserverlib.DataServerLibConstants;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +36,8 @@ public class MainActivity extends ActionBarActivity {
     private ListView lv;
     private ArrayList<DataServiceInformation> services;
     private ArrayAdapter<DataServiceInformation> arrayAdapter;
+    public static final String SERVICE_MAP_KEY = "service_map";
+    public static final String SERVICE_ID_KEY  = "service_id";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,10 +59,9 @@ public class MainActivity extends ActionBarActivity {
                 Toast toast=Toast.makeText(getApplicationContext(), s.serviceId, Toast.LENGTH_SHORT);
                 toast.show();
                 Intent intent = new Intent(view.getContext(), ServiceActivity.class);
-                intent.putExtra("msg","bye");
                 Bundle b = new Bundle();
-                b.putSerializable("service_map", s.fieldInfo);
-                b.putString("service_id", s.serviceId);
+                b.putSerializable(SERVICE_MAP_KEY, s.fieldInfo);
+                b.putString(SERVICE_ID_KEY, s.serviceId);
                 intent.putExtras(b);
                 startActivity(intent);
             }
@@ -66,41 +69,23 @@ public class MainActivity extends ActionBarActivity {
         final Button button = (Button) findViewById(R.id.refreshButton);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Intent notifyIntent = new Intent();
-                notifyIntent.setAction("com.example.michael.contentmanager.broadcaster");
-                sendOrderedBroadcast(notifyIntent, null, (BroadcastReceiver) new DataServerReceiver() {
-                    @Override
-                    protected void onNewServices() {
-                        services = serviceList;
-                        arrayAdapter.clear();
-                        arrayAdapter.addAll(serviceList);
-                        arrayAdapter.notifyDataSetChanged();
-                        System.out.println("got New Services");
-                    }
-                }, null, Activity.RESULT_OK,null,null);
-                /*
-                // Perform action on click
-                Message msg = Message
-                        .obtain(null, 3);
-
-                msg.replyTo = new Messenger(new DataServerHandler());
-                // We pass the value
-                Bundle b = new Bundle();
-                b.putString("data", "content manager data");
-
-                msg.setData(b);
-
-                try {
-                    if(mBound) {
-                        mService.send(msg);
-                        System.out.println("sent message");
-                    }
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-                */
+                refreshServices();
             }
         });
+    }
+
+    public void refreshServices() {
+        Intent notifyIntent = new Intent();
+        notifyIntent.setAction(DataServerLibConstants.CM_BROADCAST_ID);
+        sendOrderedBroadcast(notifyIntent, null, (BroadcastReceiver) new DataServerReceiver() {
+            @Override
+            protected void onNewServices() {
+                services = serviceList;
+                arrayAdapter.clear();
+                arrayAdapter.addAll(serviceList);
+                arrayAdapter.notifyDataSetChanged();
+            }
+        }, null, Activity.RESULT_OK,null,null);
     }
 
 
@@ -124,25 +109,7 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // Bind to the service
-        /*
-        bindService(new Intent(this, MessengerService.class), mConnection,
-                Context.BIND_AUTO_CREATE);
-
-        PackageManager packageManager = getPackageManager();
-        Intent serviceIntent = new Intent("com.example.michael.dataserver.service");
-        List<ResolveInfo> services = packageManager.queryIntentServices(serviceIntent, 0);
-        for(int i = 0; i < services.size(); ++i) {
-            System.out.println(services.get(i));
-        }
-        if (services.size() > 0) {
-            ResolveInfo service = services.get(0);
-            Intent intent = new Intent();
-            intent.setClassName(service.serviceInfo.packageName, service.serviceInfo.name);
-            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-            System.out.println("Bound to service");
-        }
-        */
+        refreshServices();
     }
 
 

@@ -10,6 +10,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.michael.dataserverlib.DataServerLibConstants;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -19,16 +21,9 @@ public abstract class DataServerReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        System.out.println("CM receiver:");
-        System.out.println(intent);
-        CharSequence text = "CM received broadcast from DS!";
-        int duration = Toast.LENGTH_SHORT;
-        Toast toast = Toast.makeText(context, text, duration);
-        toast.show();
         Bundle results = getResultExtras(true);
-        String s = results.getString("broadCastResp");
-        System.out.println("CM DS Rx Final Result Receiver = " + s);
-        ArrayList<String> serviceIds = results.getStringArrayList("dsServices");
+        String s = results.getString(DataServerLibConstants.CM_BROADCAST_RESP_KEY);
+        ArrayList<String> serviceIds = results.getStringArrayList(DataServerLibConstants.CM_BROADCAST_SERVICES);
         serviceList = new ArrayList<DataServiceInformation>();
         if(serviceIds != null) {
             for (int i = 0; i < serviceIds.size(); ++i) {
