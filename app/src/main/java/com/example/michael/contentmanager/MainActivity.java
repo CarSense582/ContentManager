@@ -46,9 +46,9 @@ public class MainActivity extends ActionBarActivity {
         //Setup list
         lv = (ListView) findViewById(R.id.serviceList);
         services = new ArrayList<DataServiceInformation>();
-        arrayAdapter = new ArrayAdapter<DataServiceInformation>(
+        arrayAdapter = new DataServiceInformationAdapter(
                 this,
-                android.R.layout.simple_list_item_1,
+                R.layout.service_info_item,
                 services );
 
         lv.setAdapter(arrayAdapter);

@@ -1,3 +1,6 @@
+/**
+ * Created by michael on 4/22/15.
+ */
 package com.example.michael.contentmanager;
 
 import android.app.Activity;
@@ -11,13 +14,9 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.TextView;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 
-/**
- * Created by michael on 4/22/15.
- */
 public class PairArrayAdapter extends ArrayAdapter<Pair<String,Object>> {
     Context context;
     int layoutResourceId;
