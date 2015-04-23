@@ -17,22 +17,19 @@ abstract public class ContentManagerReceiver<T extends SensorData> extends Broad
     abstract public String getServiceId(Context c);
     @Override
     public void onReceive(Context context, Intent intent) {
-
-        System.out.println(intent);
         if(intent.getAction() == DataServerLibConstants.CM_BROADCAST_ID) {
-            System.out.println("oh yeah");
+            Bundle results = getResultExtras(true);
+            //Add this service id to list
+            ArrayList<String> otherServices = results.getStringArrayList(DataServerLibConstants.CM_BROADCAST_SERVICES);
+            if (otherServices == null) {
+                otherServices = new ArrayList<String>();
+            }
+            String serviceId = getServiceId(context);
+            otherServices.add(serviceId);
+            results.putStringArrayList(DataServerLibConstants.CM_BROADCAST_SERVICES, otherServices);
+            //Add service dependent map
+            results.putSerializable(serviceId, getSensor().getFields());
         }
-        Bundle results = getResultExtras(true);
-        //Add this service id to list
-        ArrayList<String> otherServices = results.getStringArrayList(DataServerLibConstants.CM_BROADCAST_SERVICES);
-        if(otherServices == null) {
-            otherServices = new ArrayList<String>();
-        }
-        String serviceId = getServiceId(context);
-        otherServices.add(serviceId);
-        results.putStringArrayList(DataServerLibConstants.CM_BROADCAST_SERVICES, otherServices);
-        //Add service dependent map
-        results.putSerializable(serviceId, getSensor().getFields());
     }
 
 }
