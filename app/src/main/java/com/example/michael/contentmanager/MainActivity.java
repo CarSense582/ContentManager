@@ -12,25 +12,67 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity {
 
+    private ListView lv;
+    private ArrayList<DataServiceInformation> services;
+    private ArrayAdapter<DataServiceInformation> arrayAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        final Button button = (Button) findViewById(R.id.button);
+        //Setup list
+        lv = (ListView) findViewById(R.id.serviceList);
+        services = new ArrayList<DataServiceInformation>();
+        arrayAdapter = new ArrayAdapter<DataServiceInformation>(
+                this,
+                android.R.layout.simple_list_item_1,
+                services );
+
+        lv.setAdapter(arrayAdapter);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View view,
+                                    int position, long id) {
+                DataServiceInformation s = services.get(position);
+                Toast toast=Toast.makeText(getApplicationContext(), s.serviceId, Toast.LENGTH_SHORT);
+                toast.show();
+
+            }
+        });
+        final Button button = (Button) findViewById(R.id.refreshButton);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                Intent notifyIntent = new Intent();
+                notifyIntent.setAction("com.example.michael.contentmanager.broadcaster");
+                sendOrderedBroadcast(notifyIntent, null, (BroadcastReceiver) new DataServerReceiver() {
+                    @Override
+                    protected void onNewServices() {
+                        services = serviceList;
+                        arrayAdapter.clear();
+                        arrayAdapter.addAll(serviceList);
+                        arrayAdapter.notifyDataSetChanged();
+                        System.out.println("got New Services");
+                    }
+                }, null, Activity.RESULT_OK,null,null);
+                /*
                 // Perform action on click
                 Message msg = Message
                         .obtain(null, 3);
@@ -50,6 +92,7 @@ public class MainActivity extends ActionBarActivity {
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
+                */
             }
         });
     }
@@ -67,18 +110,7 @@ public class MainActivity extends ActionBarActivity {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        System.out.println("item selected");
-        Intent notifyIntent = new Intent();
-        notifyIntent.setAction("com.example.michael.contentmanager.broadcaster");
-        sendOrderedBroadcast(notifyIntent, null, (BroadcastReceiver) new DataServerReceiver(), null, Activity.RESULT_OK,null,null);
-        System.out.println("Sent broadcast");
-
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
         return super.onOptionsItemSelected(item);
     }
 
