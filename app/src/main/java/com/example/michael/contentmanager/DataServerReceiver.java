@@ -14,10 +14,20 @@ import com.example.michael.dataserverlib.DataServerLibConstants;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 public abstract class DataServerReceiver extends BroadcastReceiver {
 
     public ArrayList<DataServiceInformation> serviceList;
+    public Set<String> fieldNames;
+
+    DataServerReceiver() {
+        super();
+    }
+    DataServerReceiver(Set<String> fields) {
+        super();
+        fieldNames = fields;
+    }
 
     @Override
     public void onReceive(Context context, Intent intent) {

@@ -30,6 +30,7 @@ import com.example.michael.dataserverlib.SensorData;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -39,14 +40,17 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ContentManagerService extends Service {
+    public final String TAG = "CMService";
     AppData sensor;
     HashMap<String,HashMap<String,Object>> appMap;
     private ArrayList<DataServiceInformation> services;
-    HashMap<String,Object> map;
-    HashMap<String,HashMap<String,Object>> distrMap;
-    ArrayList<ServiceConnection> connections;
-    ArrayList<Messenger> messengers;
-    ArrayList<HashMap<String,Object>> messengerMapList;
+    //Right impl
+    //Mapping of serviceIds to connection, messenger, and necessary data Fields
+    HashMap<String,DataServiceConnection> connectionMap;
+    HashMap<String,Messenger> messengerMap;
+    HashMap<String,Set<String>> dsFields;
+
+
     /**
      * Handler of incoming messages from clients.
      */
@@ -97,59 +101,61 @@ public class ContentManagerService extends Service {
      */
     @Override
     public IBinder onBind(Intent intent) {
-        appMap = new HashMap<String,HashMap<String,Object>>();
+        //Initializations
+        if(connectionMap == null) {
+            connectionMap = new HashMap<String,DataServiceConnection>();
+        } if(messengerMap == null) {
+            messengerMap = new HashMap<String,Messenger>();
+        } if(dsFields == null) {
+            dsFields = new HashMap<String,Set<String>>();
+        } if(appMap == null) {
+            appMap = new HashMap<String,HashMap<String,Object>>();
+        }
         Toast.makeText(getApplicationContext(), "CM binding", Toast.LENGTH_SHORT).show();
+        //Get Data
         Bundle extras = intent.getExtras();
-        map = (HashMap<String,Object>) extras.getSerializable(AppCMLibConstants.QUERY_MAP);
+        HashMap<String,Object> extraMap = (HashMap<String,Object>) extras.getSerializable(AppCMLibConstants.QUERY_MAP);
         String appId = extras.getString(AppCMLibConstants.QUERY_APP_ID);
-        appMap.put(appId,map);
+        //Setup format for app
+        appMap.put(appId,extraMap);
+
         //Figure out who I can get stuff from
         Intent notifyIntent = new Intent();
         notifyIntent.setAction(DataServerLibConstants.CM_BROADCAST_ID);
         services = new ArrayList<DataServiceInformation>();
-        sendOrderedBroadcast(notifyIntent, null, (BroadcastReceiver) new DataServerReceiver() {
+        sendOrderedBroadcast(notifyIntent, null, (BroadcastReceiver) new DataServerReceiver(extraMap.keySet()) {
             @Override
             protected void onNewServices() {
-                distrMap = new HashMap<String,HashMap<String,Object>>();
                 services = serviceList;
-                Set<String> keysLeft = map.keySet();
+                Set<String> keysLeft = fieldNames; //constructed field
                 for(DataServiceInformation dI : services) {
                     Set<String> matchingKeys = keysLeft;
-                    matchingKeys.retainAll(dI.fieldInfo.keySet());
-                    HashMap<String,Object> matchingFields = new HashMap<String, Object>();
-                    for(String f : matchingKeys) {
-                        matchingFields.put(f,dI.fieldInfo.get(f));
-                    }
-                    //Make mapping of serviceId and fields
-                    distrMap.put(dI.serviceId, matchingFields);
+                    matchingKeys.retainAll(dI.fieldInfo.keySet()); //TODO: Not doing any type checking
+                    dsFields.put(dI.serviceId, matchingKeys);
                     keysLeft.removeAll(matchingKeys);
                     if(keysLeft.isEmpty()) {
                         break;
                     }
                 }
                 if(!keysLeft.isEmpty()) {
-                    Log.i("ContentManagerService","Couldn't find right setups");
+                    Log.i(TAG,"Couldn't find right setups");
                 } else {
-                    Log.i("ContentManagerService","Found matches");
-                    connections = new ArrayList<ServiceConnection>();
-                    messengers  = new ArrayList<Messenger>();
-                    messengerMapList = new ArrayList<HashMap<String, Object>>();
+                    Log.i(TAG,"Found matches");
                     //Bind to these services
-                    for(String sId : distrMap.keySet()) {
-                        connections.add(new ServiceConnection() {
+                    for(String sId : dsFields.keySet()) {
+                        Log.i(TAG, "using ds: " + sId);
+                        connectionMap.put(sId, new DataServiceConnection(sId) { //pass Id to constructor
                             @Override
                             public void onServiceConnected(ComponentName name, IBinder service) {
-                                messengers.add(new Messenger(service));
+                                messengerMap.put(connectionId, new Messenger(service)); //use Id
                             }
                             @Override
                             public void onServiceDisconnected(ComponentName name) {
-
                             }
                         });
-                        messengerMapList.add(distrMap.get(sId));
                         Intent bindIntent = getIntentByName(sId);
                         if(bindIntent != null) {
-                            bindService(bindIntent, connections.get(connections.size()-1), Context.BIND_AUTO_CREATE);
+                            bindService(bindIntent, connectionMap.get(sId), Context.BIND_AUTO_CREATE);
                         } else {
                             System.out.println("Service not found");
                         }
@@ -174,9 +180,8 @@ public class ContentManagerService extends Service {
     }
 
     public void sendMessage(int what) {
-        for(int i = 0; i < messengers.size(); ++i) {
-            Messenger msgr = messengers.get(i);
-            HashMap<String,Object> msgMapping = messengerMapList.get(i);
+        for(String sId : messengerMap.keySet()) {
+            Messenger msgr = messengerMap.get(sId);
             Message msg = Message
                     .obtain(null, what);
             Bundle b = new Bundle();
@@ -187,20 +192,22 @@ public class ContentManagerService extends Service {
                         ArrayList<Pair<String, Object>> serviceFields = new ArrayList<Pair<String, Object>>();
                         Set<String> keys = map.keySet();
                         for (String k : keys) {
-                            //messengerMapList.set(i,map)
                             serviceFields.add(new Pair<String, Object>(k, map.get(k)));
                         }
                     }
                 });
             } else { //Writing
                 HashMap<String, Object> map = new HashMap<String, Object>();
+                /*
                 for(int i = 0; i < arrayAdapter.size(); ++i) {
                     Pair<String,Object> p = arrayAdapter.getItem(i);
                     map.put(p.first,p.second);
                 }
+                */
                 b.putSerializable(DataServerLibConstants.WRITE_MAP,map);
             }
             msg.setData(b);
+            /*
             try {
                 if(mBound) {
                     mService.send(msg);
@@ -208,7 +215,7 @@ public class ContentManagerService extends Service {
                 }
             } catch (RemoteException e) {
                 e.printStackTrace();
-            }
+            }*/
         }
     }
 
@@ -217,12 +224,10 @@ public class ContentManagerService extends Service {
     public boolean onUnbind(Intent intent) {
         Toast.makeText(getApplicationContext(), "CM unbinding", Toast.LENGTH_SHORT).show();
         //Unbind to Services
-        for(int i = 0; i < distrMap.size(); ++i) {
-            unbindService(connections.get(i));
+        for(String s : connectionMap.keySet()) {
+            unbindService(connectionMap.get(s));
         }
-        connections = new ArrayList<ServiceConnection>();
-        messengers  = new ArrayList<Messenger>();
-        messengerMapList = new ArrayList<HashMap<String, Object>>();
+        connectionMap.clear();
         return false; //Don't use rebind
     }
 }
