@@ -24,6 +24,14 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.michael.contentmanager.MainActivity" />
         </activity>
+        <service
+            android:name=".ContentManagerService"
+            android:enabled="true"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="com.example.michael.contentmanager.service" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

@@ -1,1 +1,1 @@
-include ':app', ':dataserverlib'
+include ':app', ':dataserverlib', ':appcmlib'

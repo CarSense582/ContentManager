@@ -9,6 +9,7 @@
     <string name="title_activity_service">ServiceActivity</string>
     <string name="setButton">Set</string>
     <string name="getButton">Get</string>
+    <string name="service_id">com.example.michael.contentmanager.service</string>
 
 
 </resources>
